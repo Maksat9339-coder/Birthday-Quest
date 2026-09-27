@@ -121,8 +121,11 @@ const SOUND_FILES = {
     death: 'assets/sounds/Death.mp3'
 };
 const MUSIC_FILES = {
-    background: 'assets/sounds/Ba.mp3',
+    background: 'assets/sounds/background-loop.wav',
     rhythm: 'assets/sounds/Rhytm.mp3',
+    memory: 'assets/sounds/memory.mp3',
+    differences: 'assets/sounds/diff.mp3',
+    boss: 'assets/sounds/boss.mp3',
     final: 'assets/sounds/Final.mp3'
 };
 // Вставь сюда ссылку YouTube, когда видео будет загружено.
@@ -186,6 +189,18 @@ function stopRhythmMusic() {
     if (!backgroundMusic || !backgroundMusic.src.includes('/Rhytm.mp3')) return;
     backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
+    if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
+}
+function startStageMusic(track, maxVolume = 0.14) {
+    if (!backgroundMusic || !soundEnabled) return;
+    backgroundMusic.dataset.stageTrack = track;
+    startBackgroundMusic(track, Math.min(gameSettings.musicVolume, maxVolume));
+}
+function stopStageMusic() {
+    if (!backgroundMusic || !backgroundMusic.dataset.stageTrack) return;
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    delete backgroundMusic.dataset.stageTrack;
     if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
 }
 
@@ -322,6 +337,7 @@ function handleRhythmTap(laneIndex) {
 
 function finishRhythmGame() {
     stopRhythmMusic();
+    stopStageMusic();
     rhythmActive = false;
     if (rhythmFrameId) cancelAnimationFrame(rhythmFrameId);
     rhythmLoop = null;
@@ -390,6 +406,7 @@ function triggerVibrate(ms = 50) {
 }
 
 function showScreen(screenId) {
+    if (!['screen-memory', 'screen-differences', 'screen-boss'].includes(screenId)) stopStageMusic();
     if (screenId !== 'screen-rhythm') stopRhythmMusic();
     if (screenId !== 'screen-rhythm') {
         rhythmActive = false;
@@ -956,6 +973,7 @@ let memoryPairCount = 8;
 
 function startMemoryGame() {
     showScreen('screen-memory');
+    startStageMusic(MUSIC_FILES.memory);
     const grid = document.getElementById('memory-grid');
     grid.innerHTML = '';
     flippedCards = [];
@@ -1105,6 +1123,7 @@ let differenceHintIndex = 0;
 
 function startDifferenceGame() {
     showScreen('screen-differences');
+    startStageMusic(MUSIC_FILES.differences);
     differenceRound = 0;
     differenceFound = 0;
     differenceLocked = false;
@@ -1209,6 +1228,7 @@ function showDifferenceHint() {
 }
 
 function finishDifferenceGame() {
+    stopStageMusic();
     const firstCompletion = !gameState.completedMinigames.includes('differences');
     if (firstCompletion) {
         gameState.score += 300;
@@ -1360,6 +1380,7 @@ let bossX = 50;
 
 function startBossGame() {
     showScreen('screen-boss');
+    startStageMusic(MUSIC_FILES.boss);
     bossHp = 180; playerHp = 100; playerX = 50; bossX = 50; bossAttackData = null;
     clearBossTimers();
     updateBossHp(); updatePlayerHp(); updatePlayerPosition(); updateBossPosition();
@@ -1499,6 +1520,7 @@ function fireSpaceCannon() {
 }
 
 function finishBossGame() {
+    stopStageMusic();
     clearBossTimers();
     playSound('death');
     const wasBossCompleted = gameState.completedMinigames.includes('boss');
