@@ -176,14 +176,17 @@ function preloadSounds() {
 function startBackgroundMusic(track = MUSIC_FILES.background, volume = gameSettings.musicVolume) {
     if (!backgroundMusic || !soundEnabled) return;
     const source = track.includes('/') ? track : `assets/sounds/${track}`;
-    if (!backgroundMusic.src.endsWith(track)) {
+    const sourceUrl = new URL(source, document.baseURI).href;
+    const currentUrl = backgroundMusic.src.split('?')[0];
+    if (currentUrl !== sourceUrl) {
         backgroundMusic.onerror = () => {
             backgroundMusic.onerror = null;
             backgroundMusic.src = MUSIC_FILES.background;
             backgroundMusic.load();
             backgroundMusic.play().catch(() => {});
         };
-        backgroundMusic.src = source;
+        backgroundMusic.pause();
+        backgroundMusic.src = `${sourceUrl}?v=music-2`;
         backgroundMusic.load();
     }
     backgroundMusic.loop = true;
