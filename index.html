@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#090b18">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%22.9em%22 font-size=%2290%22>🎂</text></svg>">
+    <meta name="description" content="Birthday Quest - праздничный интерактивный квест">
+    <title>Birthday Quest · Аделина</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="game-container">
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ ИНФОРМАЦИИ -->
+        <header id="top-bar" class="top-bar hidden">
+    <button id="home-btn" class="icon-btn" aria-label="Вернуться к карте">🗺️</button>
+    <button id="start-menu-btn" class="icon-btn" aria-label="Перейти в стартовое меню">🏠</button>
+    <button id="shop-btn" class="icon-btn">🛒</button>
+    <button id="inventory-btn" class="icon-btn">🎒</button>
+    <div class="stat-item">
+        <span class="icon" id="star-bonus-icon" style="cursor: pointer;">⭐</span> 
+        <span id="score-display">0000</span>
+    </div>
+    <div class="stat-item"><span id="lives-display"></span></div>
+    <button id="sound-toggle-btn" class="icon-btn">🔊</button>
+</header>
+
+        <!-- ЭКРАН 1: СТАРТ -->
+        <section id="screen-start" class="screen active">
+            <div class="pixel-box main-title-box">
+                <div class="cake-anim">🎂</div>
+                <h1 class="pixel-text title">Аделина, у меня для тебя кое-что есть</h1>
+                <div class="sister-badge" id="start-sister-name">СЕСТРА</div>
+                <p class="text-sm start-subtitle">Я немного заморочился и сделал мини-квест для тебя, надеюсь будет хоть чуть интересна.</p>
+            </div>
+            <div class="start-stats">
+                <p>⭐<span id="start-score">0000</span></p>
+            </div>
+            <button id="btn-start-game" class="btn btn-primary pulse">ДА, ПОГНАЛИ</button>
+            <button id="btn-no-game" class="btn btn-secondary runaway-btn">НЕ ХОЧУ</button>
+            <button id="btn-reset-game" class="btn btn-small btn-danger margin-top-sm">RESET GAME</button>
+        </section>
+
+        <!-- ЭКРАН 2: ИНТРО -->
+        <section id="screen-intro" class="screen hidden">
+            <div class="pixel-card">
+                <h2 class="pixel-text">ОСОБЕННЫЙ ДЕНЬ</h2>
+                <div class="typewriter-text" id="intro-text">
+                    Аделина, сегодня у тебя особенный день, поэтому я подготовил для тебя небольшой квест. Тебе нужно пройти несколько испытаний, найти спрятанные подсказки и добраться до финального подарка. Надеюсь, тебе понравится :)
+                </div>
+            </div>
+            <button id="btn-intro-next" class="btn btn-success margin-top-md">ПОЕХАЛИ!</button>
+        </section>
+
+        <!-- ЭКРАН 3: КАРТА КВАРТИРЫ -->
+        <section id="screen-map" class="screen hidden">
+            <h2 class="pixel-text text-center margin-bottom-sm">🗺️ QUEST MAP</h2>
+            <div class="map-grid">
+                <button id="loc-zal" class="btn map-loc unlocked">
+                    <span>🎵 РИТМ</span> <span class="status">🔓</span>
+                </button>
+                <button id="loc-kitchen" class="btn map-loc locked">
+                    <span>🧠 MEMORY</span> <span class="status">🔒</span>
+                </button>
+                <button id="loc-room" class="btn map-loc locked">
+                    <span>🔎 НАЙДИ ОТЛИЧИЯ</span> <span class="status">🔒</span>
+                </button>
+                <button id="loc-bathroom" class="btn map-loc locked">
+                    <span>🔐 КАПСУЛА КОДА</span> <span class="status">🔒</span>
+                </button>
+                <button id="loc-secret" class="btn map-loc locked">
+                    <span>🎉 ФИНАЛ</span> <span class="status">🔒</span>
+                </button>
+                <button id="loc-gifts" class="btn map-loc unlocked bonus-location">
+                    <span>✨ ПОЙМАЙ НАСТРОЕНИЕ</span> <span class="status">🎁</span>
+                </button>
+                <button id="loc-wish" class="btn map-loc unlocked bonus-location">
+                    <span>📝 ПОЖЕЛАНИЕ</span> <span class="status">✍️</span>
+                </button>
+                <button id="loc-achievements" class="btn map-loc unlocked bonus-location">
+                    <span>🏆 ДОСТИЖЕНИЯ</span> <span class="status">🏆</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- РАЗДЕЛ: ПОЖЕЛАНИЕ НА ПОДАРОК -->
+        <section id="screen-wish" class="screen hidden">
+            <div class="pixel-card wish-card">
+                <div class="quiz-kicker">ЛИЧНЫЙ ЗАПРОС</div>
+                <h2 class="color-gold">📝 ТВОЁ ПОЖЕЛАНИЕ</h2>
+                <p class="text-sm text-center margin-y-md">Напиши, какой подарок тебе хотелось бы получить. Это останется в игре, чтобы не потерялось.</p>
+                <textarea id="wish-input" class="wish-input" maxlength="500" placeholder="Например: хочу книгу, сертификат, поездку или сюрприз..."></textarea>
+                <p id="wish-saved" class="wish-saved" aria-live="polite"></p>
+                <button id="btn-save-wish" class="btn btn-success margin-top-md">💌 СОХРАНИТЬ ПОЖЕЛАНИЕ</button>
+                <button id="btn-wish-back" class="btn btn-secondary margin-top-sm">⬅️ НАЗАД К КАРТЕ</button>
+            </div>
+        </section>
+
+        <!-- МЕНЮ ДОСТИЖЕНИЙ -->
+        <section id="screen-achievements" class="screen hidden">
+            <div class="achievement-page">
+                <div class="achievement-heading">
+                    <div class="quiz-kicker">ГАЛЕРЕЯ НАГРАД</div>
+                    <h2 class="pixel-text">🏆 ДОСТИЖЕНИЯ</h2>
+                    <p id="achievements-progress" class="text-sm text-center">0 / 9 открыто · 0%</p>
+                </div>
+                <div id="achievements-grid" class="achievements-grid"></div>
+                <button id="btn-achievements-back" class="btn btn-secondary">⬅️ НАЗАД К КАРТЕ</button>
+            </div>
+        </section>
+
+        <!-- ЭТАП 1: МИНИ-ИГРА "ЛОВИ ЗВЁЗДЫ" -->
+        <section id="screen-star-game" class="screen hidden">
+            <div class="game-hud">
+                <div>⭐ SCORE: <span id="star-game-score">0</span></div>
+                <div>⏱️ TIME: <span id="star-game-timer">15</span>s</div>
+            </div>
+            <div id="star-canvas" class="star-canvas"></div>
+        </section>
+
+        <!-- БОНУСНЫЙ МИНИ-ГЕЙМ: ПОЙМАЙ НАСТРОЕНИЕ -->
+<section id="screen-gifts" class="screen hidden">
+    <div class="game-hud">
+        <div>✨ MOOD: <span id="gift-game-score">0</span> / 12</div>
+        <div>❤️ LIVES: <span id="gift-game-timer">3</span></div>
+    </div>
+    <div class="gift-progress" aria-label="Прогресс хорошего настроения"><span id="gift-progress-bar"></span></div>
+    <div id="gift-field" class="gift-field mood-field" aria-label="Поле для ловли хорошего настроения">
+        <div class="gift-clouds">✦　·　✧　·　✦　·　✧</div>
+        <div class="gift-catch-zone">CATCH THE GOOD VIBES</div>
+        <div id="gift-basket" class="gift-basket"><span class="basket-handle"></span><span class="basket-body"></span></div>
+    </div>
+    <p class="text-sm text-center">Лови хорошие эмоции и избегай того, что портит настроение.</p>
+</section>
+
+        <!-- ЭКРАН: ИНВЕНТАРЬ -->
+<section id="screen-inventory" class="screen hidden">
+    <div class="pixel-card text-center">
+        <h3>🎒 ИНВЕНТАРЬ</h3>
+        <p class="text-sm margin-y-md">Все твои купленные награды и подарки:</p>
+        <div id="inventory-items-list" class="shop-list"></div>
+        <button id="btn-inventory-back" class="btn btn-primary margin-top-md">⬅️ НАЗАД К КАРТЕ</button>
+    </div>
+</section>
+
+        <!-- ЭТАП 2: ВВОД КОДА (ТЕРМИНАЛ) -->
+        <section id="screen-terminal" class="screen hidden">
+            <div class="pixel-card text-center">
+                <h3>🔐 SECURITY TERMINAL</h3>
+                <p id="terminal-clue-text" class="clue-box">Загрузка подсказки...</p>
+                <div class="code-display" id="code-display">_ _ _ _</div>
+                <div class="numpad">
+                    <button class="num-btn" data-val="1">1</button>
+                    <button class="num-btn" data-val="2">2</button>
+                    <button class="num-btn" data-val="3">3</button>
+                    <button class="num-btn" data-val="4">4</button>
+                    <button class="num-btn" data-val="5">5</button>
+                    <button class="num-btn" data-val="6">6</button>
+                    <button class="num-btn" data-val="7">7</button>
+                    <button class="num-btn" data-val="8">8</button>
+                    <button class="num-btn" data-val="9">9</button>
+                    <button class="num-btn btn-danger" data-val="back">←</button>
+                    <button class="num-btn" data-val="0">0</button>
+                    <button class="num-btn btn-success" data-val="check">✓</button>
+                </div>
+            </div>
+        </section>
+
+<!-- Экран бонусного уровня (добавить внутрь <main>) -->
+<section id="screen-bonus" class="screen hidden">
+    <h2>✨ СЕКРЕТНЫЙ БОНУС!</h2>
+    <p class="subtitle">Внимательно посмотри на картинку. Чего на ней не хватает? Нажми на это место!</p>
+
+    <div class="diff-container">
+        <div id="bonus-box" class="diff-box" style="position: relative; display: inline-block;">
+            <img src="assets/images/bonus.jpg" alt="Бонусное фото" style="max-width: 100%; height: auto; border-radius: 12px;">
+        </div>
+    </div>
+
+    <div class="btn-group" style="margin-top: 15px;">
+        <button id="btn-bonus-back" class="btn btn-secondary">⬅️ НАЗАД К КАРТЕ</button>
+    </div>
+</section>
+
+        <!-- ЭТАП 3: MEMORY GAME -->
+        <section id="screen-memory" class="screen hidden">
+            <h3 class="pixel-text text-center">🧠 MEMORY TEST</h3>
+            <p class="text-center text-sm margin-bottom-sm">Найди 8 случайных пар фотографий!</p>
+            <div id="memory-grid" class="memory-grid"></div>
+        </section>
+
+        <!-- ЭТАП 5: ГОЛОСОВАЯ ПОДСКАЗКА -->
+        <section id="screen-audio-clue" class="screen hidden">
+            <div class="pixel-card text-center">
+                <h3>🎙️ ПОЛУЧЕНО СООБЩЕНИЕ</h3>
+                <p class="margin-y-md">Иногда подсказки нельзя прочитать... Ищи внимательно!</p>
+                <button id="btn-play-audio" class="btn btn-primary">▶ PLAY MESSAGE</button>
+                <p id="audio-fallback-text" class="text-sm margin-top-sm color-gold"></p>
+                <button id="btn-audio-done" class="btn btn-success margin-top-md">ПРОДОЛЖИТЬ</button>
+            </div>
+        </section>
+
+        <!-- ЭТАП 6: ИГРА «НАЙДИ ОТЛИЧИЯ» -->
+<section id="screen-differences" class="screen hidden">
+    <div class="game-hud">
+        <div>🔎 ROUND: <span id="diff-round">1</span> / 3</div>
+        <div>✅ FOUND: <span id="diff-score">0</span> / <span id="diff-total">4</span></div>
+    </div>
+    <div class="pixel-card difference-card">
+            <div class="quiz-kicker">ОТЛИЧИЯ: ЧТО ИЗМЕНИЛОСЬ?</div>
+            <h2 id="diff-title">ПРАЗДНИЧНЫЙ СТОЛ</h2>
+            <p id="diff-instruction" class="text-sm text-center">Сравни две фотографии и нажми на места, где что-то пропало.</p>
+            <div class="difference-scenes">
+            <div class="difference-scene-wrap"><span>БЫЛО</span><div id="diff-before" class="difference-scene"></div></div>
+            <div class="difference-scene-wrap"><span>СТАЛО</span><div id="diff-after" class="difference-scene"></div></div>
+            </div>
+        <p id="diff-feedback" class="quiz-feedback" aria-live="polite"></p>
+        <button id="btn-diff-hint" type="button" class="btn btn-success btn-small diff-hint-button">💡 ПОДСКАЗАТЬ ОТЛИЧИЕ</button>
+    </div>
+</section>
+
+        <!-- ЭТАП 7: ФИНАЛЬНЫЙ КОД СЕКРЕТА -->
+        <section id="screen-final-code" class="screen hidden">
+            <div class="pixel-card text-center">
+                <h3>🧩 FINAL CODE</h3>
+                <p>Ты уже получила код, осталось его вспомнить.</p>
+                <input type="text" id="final-code-input" class="pixel-input" placeholder="____" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
+                <button id="btn-submit-final-code" class="btn btn-success margin-top-md">UNLOCK BOSS</button>
+            </div>
+        </section>
+
+        <!-- ФИНАЛЬНЫЙ БОСС: КОСМИЧЕСКАЯ АРКАДА -->
+        <section id="screen-boss" class="screen hidden">
+            <div class="pixel-card text-center space-card">
+                <div class="boss-kicker">ФИНАЛЬНЫЙ БОЙ · <span id="boss-phase">ФАЗА 1</span></div>
+                <h3 class="color-danger">🚀 КОСМИЧЕСКИЙ СТРАЖ</h3>
+                <div class="space-hud"><span>👾 BOSS <b id="boss-hp-text">180</b></span><span>🛡️ ЩИТ <b id="player-hp-text">100</b></span></div>
+                <div id="space-field" class="space-field">
+                    <div class="space-stars">✦　·　✧　·　✦　·　✧　·　✦</div>
+                    <div id="boss-ship" class="boss-ship">👾</div>
+                    <div class="boss-hp-outer"><div id="boss-hp-inner" class="boss-hp-inner"></div></div>
+                    <div id="space-warning" class="space-warning"></div>
+                    <div id="player-ship" class="player-ship">🚀</div>
+                </div>
+                <p id="boss-status" class="boss-status" aria-live="polite">Двигай корабль и жми ОГОНЬ!</p>
+                <div class="space-controls">
+                    <button id="btn-boss-left" class="btn btn-primary">◀</button>
+                    <button id="btn-boss-attack" class="btn btn-danger btn-large">🔥 ОГОНЬ</button>
+                    <button id="btn-boss-right" class="btn btn-primary">▶</button>
+                </div>
+                <p class="text-sm space-help">Уворачивайся от красных зон и стреляй по ядру босса.</p>
+            </div>
+        </section>
+
+        <!-- МАГАЗИН НАГРАД -->
+        <section id="screen-shop" class="screen hidden">
+            <div class="pixel-card text-center">
+                <h3>🎁 REWARD SHOP</h3>
+                <p class="text-sm margin-y-md">За прохождение ты получила звёзды. Можешь потратить их на награды.</p>
+                <p>Твои звёзды: ⭐ <span id="shop-score">0</span></p>
+                <div id="shop-items-list" class="shop-list"></div>
+                <button id="btn-finish-quest" class="btn btn-success margin-top-md">ВЕРНУТЬСЯ К КАРТЕ</button>
+            </div>
+        </section>
+
+        <!-- ФИНАЛЬНЫЙ ПОЗДРАВИТЕЛЬНЫЙ ЭКРАН -->
+        <section id="screen-final" class="screen hidden">
+            <div class="pixel-card text-center">
+                <h2 class="pixel-text color-gold">🎉 HAPPY BIRTHDAY!</h2>
+                <p class="margin-y-md">Ты прошла весь квест!</p>
+                <p class="text-sm">Но самое главное испытание всё это время было простым:</p>
+                <h3 class="margin-y-md color-pink">Просто улыбнуться <3</h3>
+                <p class="color-gold">🎁 Твой главный подарок ждёт тебя!</p>
+                <canvas id="confetti-canvas"></canvas>
+                <button id="btn-final-shop" class="btn btn-primary margin-top-md">🎁 ПЕРЕЙТИ К ПОДАРКАМ</button>
+            </div>
+        </section>
+
+        <!-- СЕКРЕТНАЯ КОМНОТА: ЛИЧНОЕ ПОЗДРАВЛЕНИЕ -->
+<section id="screen-secret" class="screen hidden">
+    <div class="pixel-card text-center">
+        <h2 class="color-gold margin-bottom-sm">💌 СЕКРЕТНОЕ ПОСЛАНИЕ</h2>
+        <p class="secret-location-label">ФИНАЛЬНАЯ КОМНАТА · ЛИЧНО ДЛЯ АДЕЛИНЫ</p>
+        
+        <div class="letter-box">
+            <p id="secret-message-text">
+                Дорогая Аделина!<br><br>
+                Ты прошла все мои мини-геймы, надеюсь у меня получилось хоть немного креативно.<br><br>
+                Пусть этот год принесёт тебе море радости, исполнения всех желаний и крутых моментов. Спасибо, что ты есть!<br><br>
+                🎁 <strong>Твой подарок ждёт тебя в магазине наград!</strong><br><br>
+                ILY &lt;3
+            </p>
+        </div>
+
+        <button id="btn-secret-to-shop" class="btn btn-success margin-top-md">🎉 ОТКРЫТЬ ОТДЕЛЬНЫЙ ФИНАЛ</button>
+    </div>
+</section>
+<!-- ЭТАП: РИТМ-ИГРА (SEKAI STYLE) -->
+<section id="screen-rhythm" class="screen hidden">
+    <div class="rhythm-hud">
+        <div>⭐ SCORE: <span id="rhythm-score">0</span></div>
+        <div>STREAK: <span id="rhythm-combo">0</span>🔥</div>
+    </div>
+    <div id="rhythm-judgement" class="rhythm-judgement">KEEP THE BEAT</div>
+    
+    <div id="rhythm-field" class="rhythm-field">
+        <!-- Дорожки (4 трека) -->
+        <div class="rhythm-lane" data-lane="0"></div>
+        <div class="rhythm-lane" data-lane="1"></div>
+        <div class="rhythm-lane" data-lane="2"></div>
+        <div class="rhythm-lane" data-lane="3"></div>
+        
+        <!-- Линия нажатия (Hit Zone) -->
+        <div class="rhythm-target-line"></div>
+    </div>
+
+    <div class="rhythm-controls">
+        <button class="btn rhythm-tap-btn" data-lane="0">1</button>
+        <button class="btn rhythm-tap-btn" data-lane="1">2</button>
+        <button class="btn rhythm-tap-btn" data-lane="2">3</button>
+        <button class="btn rhythm-tap-btn" data-lane="3">4</button>
+    </div>
+</section>
+
+        <!-- МОДАЛЬНОЕ ОКНО СООБЩЕНИЙ/УВЕДОМЛЕНИЙ -->
+<div id="modal-overlay" class="modal-overlay hidden">
+    <div class="pixel-modal text-center">
+        <h3 id="modal-title">TITLE</h3>
+        <p id="modal-body" class="margin-y-md">Text message</p>
+        <button id="modal-btn" class="btn btn-primary">OK</button>
+        <button id="modal-secondary-btn" class="btn btn-secondary margin-top-sm hidden">ПОВТОРИТЬ ИГРУ</button>
+    </div>
+</div>
+
+    <div id="achievement-toast" class="achievement-toast" aria-live="polite"></div>
+    <audio id="bg-music" src="assets/sounds/background-loop.wav" loop preload="auto"></audio>
+    <script src="script.js"></script>
+</body>
+</html>
