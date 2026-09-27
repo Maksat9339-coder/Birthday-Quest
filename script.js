@@ -75,7 +75,7 @@ let gameSettings = {
     sfxVolume: 0.52,
     vibration: true,
     reducedMotion: false,
-    musicTrack: 'Ba1.mp'
+    musicTrack: 'Ba1.mp3'
 };
 function loadGameSettings() {
     try {
@@ -127,7 +127,9 @@ const MUSIC_FILES = {
 };
 // Вставь сюда ссылку YouTube, когда видео будет загружено.
 const YOUTUBE_VIDEO_URL = 'https://youtu.be/RAp-wUechaE?si=E3GTDiBo-N1-9ANU';
-const soundCache = {};
+const soundPools = {};
+const soundPoolPositions = {};
+const SOUND_POOL_SIZE = 6;
 let audioContext = null;
 let backgroundMusic = null;
 let videoSecretActive = false;
@@ -148,6 +150,19 @@ function initAudio() {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (AudioCtx) audioContext = new AudioCtx();
     }
+}
+
+function preloadSounds() {
+    Object.entries(SOUND_FILES).forEach(([type, source]) => {
+        if (soundPools[type]) return;
+        soundPools[type] = Array.from({ length: type === 'rhythmClick' ? 10 : SOUND_POOL_SIZE }, () => {
+            const audio = new Audio(source);
+            audio.preload = 'auto';
+            audio.load();
+            return audio;
+        });
+        soundPoolPositions[type] = 0;
+    });
 }
 
 function startBackgroundMusic(track = MUSIC_FILES.background, volume = gameSettings.musicVolume) {
@@ -340,10 +355,14 @@ function floatingText(text, element, className = '') {
 function playSound(type) {
     if (videoSecretActive || !soundEnabled || !SOUND_FILES[type]) return;
     try {
-        if (!soundCache[type]) soundCache[type] = new Audio(SOUND_FILES[type]);
-        const audio = soundCache[type].cloneNode();
+        if (!soundPools[type]) preloadSounds();
+        const pool = soundPools[type];
+        const position = soundPoolPositions[type] || 0;
+        const audio = pool[position];
+        soundPoolPositions[type] = (position + 1) % pool.length;
         const baseVolume = type === 'rhythmClick' ? 0.20 : type === 'error' ? 0.35 : 0.52;
         audio.volume = Math.max(0, Math.min(1, baseVolume * (gameSettings.sfxVolume / 0.52)));
+        audio.currentTime = 0;
         audio.play().catch(() => {});
     } catch (e) {}
 }
@@ -1666,7 +1685,9 @@ function handleNoGameClick() {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadGameSettings();
+    preloadSounds();
     backgroundMusic = document.getElementById('bg-music');
+    if (backgroundMusic) backgroundMusic.preload = 'auto';
     updateSettingsUI();
     sendTrackingEvent('game_loaded', { name: CONFIG.sisterName });
     loadProgress();
