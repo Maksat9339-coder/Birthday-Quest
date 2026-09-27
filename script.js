@@ -71,8 +71,8 @@ let gameState = {
 
 let soundEnabled = true;
 let gameSettings = {
-    musicVolume: 0.18,
-    sfxVolume: 0.52,
+    musicVolume: 0.12,
+    sfxVolume: 0.32,
     vibration: true,
     reducedMotion: false,
     musicTrack: 'Ba4.mp3'
@@ -81,6 +81,8 @@ function loadGameSettings() {
     try {
         const saved = JSON.parse(localStorage.getItem('bq_settings') || '{}');
         gameSettings = Object.assign(gameSettings, saved);
+        if (gameSettings.musicVolume === 0.18) gameSettings.musicVolume = 0.12;
+        if (gameSettings.sfxVolume === 0.52) gameSettings.sfxVolume = 0.32;
     } catch (e) {}
     const allowedTracks = ['Ba4.mp3', 'Ba1.mp3', 'Ba2.mp3', 'Ba3.mp3'];
     if (gameSettings.musicTrack === 'Ba1.mp' || gameSettings.musicTrack === 'Ba1.mp3') {
@@ -213,6 +215,18 @@ function stopStageMusic() {
     backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
     delete backgroundMusic.dataset.stageTrack;
+    if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
+}
+function startFinalMusic() {
+    if (!backgroundMusic || !soundEnabled) return;
+    backgroundMusic.dataset.finalTrack = '1';
+    startBackgroundMusic(MUSIC_FILES.final, Math.min(gameSettings.musicVolume, 0.12));
+}
+function stopFinalMusic() {
+    if (!backgroundMusic || !backgroundMusic.dataset.finalTrack) return;
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    delete backgroundMusic.dataset.finalTrack;
     if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
 }
 
@@ -418,6 +432,7 @@ function triggerVibrate(ms = 50) {
 }
 
 function showScreen(screenId) {
+    if (screenId !== 'screen-secret') stopFinalMusic();
     if (!['screen-memory', 'screen-differences', 'screen-boss'].includes(screenId)) stopStageMusic();
     if (screenId !== 'screen-rhythm') stopRhythmMusic();
     if (screenId !== 'screen-rhythm') {
@@ -440,6 +455,7 @@ function showScreen(screenId) {
         target.classList.remove('hidden');
         target.classList.add('active');
     }
+    if (screenId === 'screen-secret') startFinalMusic();
 
     const topBar = document.getElementById('top-bar');
     if (screenId === 'screen-start' || screenId === 'screen-final') {
@@ -1643,9 +1659,6 @@ const toShopBtn = document.getElementById('btn-secret-to-shop');
 if (toShopBtn) toShopBtn.addEventListener('click', () => {
     playSound('click');
     showScreen('screen-final');
-    const secretAudio = new Audio(MUSIC_FILES.final);
-    secretAudio.volume = 0.7;
-    secretAudio.play().catch(() => {});
     triggerFlyAnimation();
     startConfetti();
 });
