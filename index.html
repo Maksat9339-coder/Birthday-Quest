@@ -22,7 +22,8 @@
         <span id="score-display">0000</span>
     </div>
     <div class="stat-item"><span id="lives-display"></span></div>
-    <button id="sound-toggle-btn" class="icon-btn">🔊</button>
+    <button id="sound-toggle-btn" class="icon-btn" aria-label="Выключить звук">🔊</button>
+    <button id="settings-btn" class="icon-btn" aria-label="Открыть настройки">⚙️</button>
 </header>
 
         <!-- ЭКРАН 1: СТАРТ -->
@@ -54,7 +55,7 @@
 
         <!-- ЭКРАН 3: КАРТА КВАРТИРЫ -->
         <section id="screen-map" class="screen hidden">
-            <h2 class="pixel-text text-center margin-bottom-sm">🗺️ QUEST MAP</h2>
+            <h2 class="pixel-text text-center margin-bottom-sm"><span id="map-secret-trigger" class="map-secret-trigger" role="button" tabindex="0" aria-label="Открыть секретную пасхалку">🗺️</span> QUEST MAP</h2>
             <div class="map-grid">
                 <button id="loc-zal" class="btn map-loc unlocked">
                     <span>🎵 РИТМ</span> <span class="status">🔓</span>
@@ -102,10 +103,37 @@
                 <div class="achievement-heading">
                     <div class="quiz-kicker">ГАЛЕРЕЯ НАГРАД</div>
                     <h2 class="pixel-text">🏆 ДОСТИЖЕНИЯ</h2>
-                    <p id="achievements-progress" class="text-sm text-center">0 / 9 открыто · 0%</p>
+                    <p id="achievements-progress" class="text-sm text-center">0 / 10 открыто · 0%</p>
                 </div>
                 <div id="achievements-grid" class="achievements-grid"></div>
                 <button id="btn-achievements-back" class="btn btn-secondary">⬅️ НАЗАД К КАРТЕ</button>
+            </div>
+        </section>
+        <!-- НАСТРОЙКИ ИГРЫ -->
+        <section id="screen-settings" class="screen hidden">
+            <div class="pixel-card settings-card">
+                <div class="quiz-kicker">SYSTEM OPTIONS</div>
+                <h2 class="pixel-text">⚙️ НАСТРОЙКИ</h2>
+                <label class="setting-row" for="music-track">
+                    <span>Фоновая музыка</span>
+                    <select id="music-track" class="setting-select">
+                        <option value="Ba1.mp">Ba1</option>
+                        <option value="Ba2.mp3">Ba2</option>
+                        <option value="Ba3.mp3">Ba3</option>
+                    </select>
+                </label>
+                <label class="setting-row" for="music-volume">
+                    <span>Фоновая музыка <b id="music-volume-value">18%</b></span>
+                    <input id="music-volume" class="setting-range" type="range" min="0" max="100" value="18">
+                </label>
+                <label class="setting-row" for="sfx-volume">
+                    <span>Звуки действий <b id="sfx-volume-value">52%</b></span>
+                    <input id="sfx-volume" class="setting-range" type="range" min="0" max="100" value="52">
+                </label>
+                <label class="setting-switch"><span>Вибрация</span><input id="vibration-toggle" type="checkbox" checked><i></i></label>
+                <label class="setting-switch"><span>Упрощённые анимации</span><input id="reduced-motion-toggle" type="checkbox"><i></i></label>
+                <button id="btn-settings-reset" class="btn btn-danger margin-top-sm">СБРОСИТЬ ПРОГРЕСС</button>
+                <button id="btn-settings-back" class="btn btn-secondary">⬅️ НАЗАД К КАРТЕ</button>
             </div>
         </section>
 
@@ -331,7 +359,16 @@
         <button id="modal-secondary-btn" class="btn btn-secondary margin-top-sm hidden">ПОВТОРИТЬ ИГРУ</button>
     </div>
 </div>
-
+<div id="video-secret-overlay" class="video-secret-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="video-secret-title">
+    <div class="video-secret-modal">
+        <button id="video-secret-close" class="video-secret-close" type="button" aria-label="Закрыть видео">×</button>
+        <div class="quiz-kicker">СЕКРЕТНАЯ ПАСХАЛКА</div>
+        <h3 id="video-secret-title">АБСОЛЮТ СИНЕМА</h3>
+        <p class="video-secret-comment">Пасхалко ввиде моей карьеры озвучкера</p>
+        <p id="video-secret-status" class="video-secret-status">Ссылка на видео будет добавлена позже.</p>
+        <iframe id="career-video" class="career-video" title="Пасхалка о карьере озвучкера" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    </div>
+</div>
     <div id="achievement-toast" class="achievement-toast" aria-live="polite"></div>
     <audio id="bg-music" src="assets/sounds/background-loop.wav" loop preload="auto"></audio>
     <script src="script.js"></script>

@@ -70,8 +70,42 @@ let gameState = {
 };
 
 let soundEnabled = true;
+let gameSettings = {
+    musicVolume: 0.18,
+    sfxVolume: 0.52,
+    vibration: true,
+    reducedMotion: false,
+    musicTrack: 'Ba1.mp'
+};
+function loadGameSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('bq_settings') || '{}');
+        gameSettings = Object.assign(gameSettings, saved);
+    } catch (e) {}
+    document.body.classList.toggle('reduced-motion', Boolean(gameSettings.reducedMotion));
+}
+function saveGameSettings() {
+    localStorage.setItem('bq_settings', JSON.stringify(gameSettings));
+    document.body.classList.toggle('reduced-motion', Boolean(gameSettings.reducedMotion));
+}
+function updateSettingsUI() {
+    const music = document.getElementById('music-volume');
+    const musicTrack = document.getElementById('music-track');
+    const sfx = document.getElementById('sfx-volume');
+    const vibration = document.getElementById('vibration-toggle');
+    const reducedMotion = document.getElementById('reduced-motion-toggle');
+    if (music) music.value = String(Math.round(gameSettings.musicVolume * 100));
+    if (musicTrack) musicTrack.value = gameSettings.musicTrack;
+    if (sfx) sfx.value = String(Math.round(gameSettings.sfxVolume * 100));
+    if (vibration) vibration.checked = Boolean(gameSettings.vibration);
+    if (reducedMotion) reducedMotion.checked = Boolean(gameSettings.reducedMotion);
+    const musicValue = document.getElementById('music-volume-value');
+    const sfxValue = document.getElementById('sfx-volume-value');
+    if (musicValue) musicValue.textContent = `${Math.round(gameSettings.musicVolume * 100)}%`;
+    if (sfxValue) sfxValue.textContent = `${Math.round(gameSettings.sfxVolume * 100)}%`;
+}
 const SOUND_FILES = {
-    click: 'assets/sounds/soft-click.wav',
+    click: 'assets/sounds/Click.mp3',
     star: 'assets/sounds/soft-star.wav',
     success: 'assets/sounds/soft-success.wav',
     error: 'assets/sounds/soft-error.wav',
@@ -79,11 +113,24 @@ const SOUND_FILES = {
     tap: 'assets/sounds/soft-click.wav',
     combo: 'assets/sounds/soft-star.wav',
     match: 'assets/sounds/soft-success.wav',
-    achievement: 'assets/sounds/achievement.wav'
+    achievement: 'assets/sounds/Ach.mp3',
+    rhythmClick: 'assets/sounds/Rhytm_Click.mp3',
+    terminalInput: 'assets/sounds/Vvod.mp3',
+    terminalConfirm: 'assets/sounds/Prinat.mp3',
+    purchase: 'assets/sounds/Pay.mp3',
+    death: 'assets/sounds/Death.mp3'
 };
+const MUSIC_FILES = {
+    background: 'assets/sounds/Ba.mp3',
+    rhythm: 'assets/sounds/Rhytm.mp3',
+    final: 'assets/sounds/Final.mp3'
+};
+// Вставь сюда ссылку YouTube, когда видео будет загружено.
+const YOUTUBE_VIDEO_URL = 'https://youtu.be/RAp-wUechaE?si=E3GTDiBo-N1-9ANU';
 const soundCache = {};
 let audioContext = null;
 let backgroundMusic = null;
+let videoSecretActive = false;
 
 let rhythmLoop = null;
 let rhythmNotes = [];
@@ -103,15 +150,18 @@ function initAudio() {
     }
 }
 
-function startBackgroundMusic() {
+function startBackgroundMusic(track = MUSIC_FILES.background, volume = gameSettings.musicVolume) {
     if (!backgroundMusic || !soundEnabled) return;
-    backgroundMusic.volume = 0.18;
+    const source = track.includes('/') ? track : `assets/sounds/${track}`;
+    if (!backgroundMusic.src.endsWith(track)) backgroundMusic.src = source;
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = Math.max(0, Math.min(1, volume));
     backgroundMusic.play().catch(() => {});
 }
 
 function updateBackgroundMusic() {
     if (!backgroundMusic) return;
-    if (soundEnabled) startBackgroundMusic();
+    if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
     else backgroundMusic.pause();
 }
 let rhythmActive = false;
@@ -126,7 +176,7 @@ const RHYTHM_BEAT_MS = 60000 / RHYTHM_BPM;
 
 function startRhythmGame() {
     showScreen('screen-rhythm');
-    startBackgroundMusic();
+    startBackgroundMusic(MUSIC_FILES.rhythm, Math.min(gameSettings.musicVolume, 0.14));
     rhythmActive = true;
     rhythmFinished = false;
     rhythmLastTime = performance.now();
@@ -235,7 +285,7 @@ function handleRhythmTap(laneIndex) {
     note.remove(); rhythmNotes.splice(index, 1);
     document.getElementById('rhythm-score').textContent = rhythmScore;
     document.getElementById('rhythm-combo').textContent = rhythmCombo;
-    playSound(grade === 'PERFECT' ? 'match' : grade === 'GREAT' ? 'combo' : 'tap');
+    playSound('rhythmClick');
     showRhythmJudgement(grade, grade.toLowerCase());
     flashScreen(grade === 'PERFECT' ? 'rgba(255,209,102,.18)' : 'rgba(82,246,220,.12)');
 }
@@ -288,15 +338,17 @@ function floatingText(text, element, className = '') {
 }
 
 function playSound(type) {
-    if (!soundEnabled || !SOUND_FILES[type]) return;
+    if (videoSecretActive || !soundEnabled || !SOUND_FILES[type]) return;
     try {
         if (!soundCache[type]) soundCache[type] = new Audio(SOUND_FILES[type]);
         const audio = soundCache[type].cloneNode();
-        audio.volume = type === 'error' ? 0.35 : 0.52;
+        const baseVolume = type === 'rhythmClick' ? 0.20 : type === 'error' ? 0.35 : 0.52;
+        audio.volume = Math.max(0, Math.min(1, baseVolume * (gameSettings.sfxVolume / 0.52)));
         audio.play().catch(() => {});
     } catch (e) {}
 }
 function triggerVibrate(ms = 50) {
+    if (!gameSettings.vibration) return;
     if ("vibrate" in navigator) {
         try { navigator.vibrate(ms); } catch(e){}
     }
@@ -763,14 +815,14 @@ function updateCodeDisplay() {
 }
 
 function handleNumpadInput(val) {
-    playSound('click');
+    playSound(val === 'check' ? 'terminalConfirm' : 'terminalInput');
     triggerVibrate(20);
 
     if (val === 'back') {
         currentInputCode = currentInputCode.slice(0, -1);
     } else if (val === 'check') {
         if (currentInputCode === targetCode) {
-            playSound('success');
+            playSound('terminalConfirm');
             triggerVibrate([100, 50, 100]);
 
             if (!gameState.unlockedLocations.includes(unlockTargetLoc)) {
@@ -1169,6 +1221,7 @@ const ACHIEVEMENTS = [
     { id: 'gifts', icon: '✨', title: 'СОБИРАТЕЛЬ НАСТРОЕНИЯ', desc: 'Собрала всё хорошее настроение', test: () => gameState.completedMinigames.includes('gifts') },
     { id: 'wish', icon: '📝', title: 'ЗАГАДАНО', desc: 'Написала пожелание о подарке', test: () => Boolean((gameState.wishText || '').trim()) },
     { id: 'secrets', icon: '🗝️', title: 'СЕКРЕТНЫЙ АГЕНТ', desc: 'Нашла секретные бонусы', test: () => Boolean(gameState.bonusCompleted) && (gameState.foundSecrets || []).includes('title') },
+    { id: 'absolute-cinema', icon: '🎬', title: 'АБСОЛЮТ СИНЕМА', desc: 'Посмотрела пасхалку о карьере озвучкера', test: () => (gameState.foundSecrets || []).includes('career-video') },
     { id: 'boss', icon: '👾', title: 'BOSS DOWN', desc: 'Победила космического стража', test: () => gameState.completedMinigames.includes('boss') },
     { id: 'quest-master', icon: '🌟', title: 'КВЕСТ ПРОЙДЕН', desc: 'Прошла все мини-игры и финального босса', test: () => ['stars', 'memory', 'differences', 'gifts', 'boss'].every(id => gameState.completedMinigames.includes(id)) }
 ];
@@ -1214,7 +1267,51 @@ function openAchievementsScreen() {
         grid.appendChild(card);
     });
 }
-
+function openCareerVideo() {
+    const overlay = document.getElementById('video-secret-overlay');
+    const video = document.getElementById('career-video');
+    const status = document.getElementById('video-secret-status');
+    if (!overlay || !video) return;
+    videoSecretActive = true;
+    if (backgroundMusic) backgroundMusic.pause();
+    overlay.classList.remove('hidden');
+    gameState.foundSecrets = gameState.foundSecrets || [];
+    if (!gameState.foundSecrets.includes('career-video')) {
+        gameState.foundSecrets.push('career-video');
+        saveProgress();
+        checkAchievements();
+    }
+    const embedUrl = getYouTubeEmbedUrl(YOUTUBE_VIDEO_URL);
+    if (embedUrl) {
+        video.src = `${embedUrl}?autoplay=1&rel=0`;
+        video.classList.remove('pending');
+        if (status) status.classList.add('hidden');
+    } else {
+        video.src = 'about:blank';
+        video.classList.add('pending');
+        if (status) status.classList.remove('hidden');
+    }
+}
+function closeCareerVideo() {
+    const overlay = document.getElementById('video-secret-overlay');
+    const video = document.getElementById('career-video');
+    if (video) video.src = 'about:blank';
+    if (overlay) overlay.classList.add('hidden');
+    videoSecretActive = false;
+    if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
+}
+function getYouTubeEmbedUrl(url) {
+    if (!url) return '';
+    try {
+        const parsed = new URL(url);
+        let id = parsed.searchParams.get('v');
+        if (!id && parsed.hostname.includes('youtu.be')) id = parsed.pathname.slice(1).split('/')[0];
+        if (!id && parsed.pathname.includes('/embed/')) id = parsed.pathname.split('/embed/')[1].split('/')[0];
+        return id ? `https://www.youtube.com/embed/${id}` : '';
+    } catch (e) {
+        return '';
+    }
+}
 let bossHp = 180;
 let playerHp = 100;
 let playerX = 50;
@@ -1325,7 +1422,7 @@ function resolveSpaceAttack() {
         const damage = type === 'laser' ? 24 : type === 'wave' ? 20 : type === 'barrage' ? 16 : 18;
         playerHp = Math.max(0, playerHp - damage); updatePlayerHp();
         setBossStatus(`💥 Попадание! Щит -${damage}. Двигайся быстрее!`);
-        playSound('error'); triggerVibrate(120);
+        playSound('death'); triggerVibrate(120);
         if (playerHp <= 0) {
             clearBossTimers();
             showModal('💥 КОРАБЛЬ РАЗРУШЕН', 'Ладно, в этот раз босс оказался сильнее. Но это не считается. Пробуй ещё.', () => startBossGame());
@@ -1367,7 +1464,7 @@ function fireSpaceCannon() {
 
 function finishBossGame() {
     clearBossTimers();
-    playSound('success');
+    playSound('death');
     const wasBossCompleted = gameState.completedMinigames.includes('boss');
     if (!wasBossCompleted) sendTrackingEvent('boss_defeated', { score: gameState.score });
     if (!gameState.unlockedLocations.includes('secret')) gameState.unlockedLocations.push('secret');
@@ -1476,7 +1573,7 @@ const toShopBtn = document.getElementById('btn-secret-to-shop');
 if (toShopBtn) toShopBtn.addEventListener('click', () => {
     playSound('click');
     showScreen('screen-final');
-    const secretAudio = new Audio('assets/sounds/success.mp3');
+    const secretAudio = new Audio(MUSIC_FILES.final);
     secretAudio.volume = 0.7;
     secretAudio.play().catch(() => {});
     triggerFlyAnimation();
@@ -1485,7 +1582,7 @@ if (toShopBtn) toShopBtn.addEventListener('click', () => {
 
 function buyReward(item) {
     if (gameState.score >= item.cost) {
-        playSound('success');
+        playSound('purchase');
         gameState.score -= item.cost;
         gameState.purchasedRewards.push(item.id);
         sendTrackingEvent('reward_purchased', { id: item.id, name: item.name, cost: item.cost });
@@ -1568,7 +1665,9 @@ function handleNoGameClick() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadGameSettings();
     backgroundMusic = document.getElementById('bg-music');
+    updateSettingsUI();
     sendTrackingEvent('game_loaded', { name: CONFIG.sisterName });
     loadProgress();
     updateMapUI();
@@ -1585,6 +1684,19 @@ document.addEventListener('DOMContentLoaded', () => {
             showModal('🤫', 'Ты нашла одну из двух секреток, поздравляю (◠‿・)—☆', () => startBonusGame());
         });
     }
+    const mapSecretTrigger = document.getElementById('map-secret-trigger');
+    if (mapSecretTrigger) {
+        mapSecretTrigger.addEventListener('click', openCareerVideo);
+        mapSecretTrigger.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCareerVideo(); }
+        });
+    }
+    const videoSecretClose = document.getElementById('video-secret-close');
+    if (videoSecretClose) videoSecretClose.addEventListener('click', closeCareerVideo);
+    const videoSecretOverlay = document.getElementById('video-secret-overlay');
+    if (videoSecretOverlay) videoSecretOverlay.addEventListener('click', event => {
+        if (event.target === videoSecretOverlay) closeCareerVideo();
+    });
 
     // Кнопка «Назад» на бонусном экране
     const bonusBackBtn = document.getElementById('btn-bonus-back');
@@ -1667,7 +1779,7 @@ if (homeBtn) {
     // Кнопки меню
     document.getElementById('btn-start-game').addEventListener('click', () => {
         initAudio();
-        startBackgroundMusic();
+        startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
         playSound('click');
         const noBtn = document.getElementById('btn-no-game');
         if (noBtn) { noBtn.style.position = ''; noBtn.style.left = ''; noBtn.style.top = ''; noBtn.style.transform = ''; }
@@ -1694,6 +1806,52 @@ if (homeBtn) {
         updateBackgroundMusic();
         document.getElementById('sound-toggle-btn').textContent = soundEnabled ? '🔊' : '🔇';
         document.getElementById('sound-toggle-btn').setAttribute('aria-label', soundEnabled ? 'Выключить звук' : 'Включить звук');
+    });
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) settingsBtn.addEventListener('click', () => {
+        playSound('click');
+        updateSettingsUI();
+        showScreen('screen-settings');
+    });
+    const settingsBack = document.getElementById('btn-settings-back');
+    if (settingsBack) settingsBack.addEventListener('click', () => {
+        playSound('click');
+        showScreen('screen-map');
+    });
+    const musicVolume = document.getElementById('music-volume');
+    if (musicVolume) musicVolume.addEventListener('input', event => {
+        gameSettings.musicVolume = Number(event.target.value) / 100;
+        const label = document.getElementById('music-volume-value');
+        if (label) label.textContent = `${event.target.value}%`;
+        saveGameSettings();
+        if (soundEnabled && backgroundMusic) backgroundMusic.volume = gameSettings.musicVolume;
+    });
+    const musicTrack = document.getElementById('music-track');
+    if (musicTrack) musicTrack.addEventListener('change', event => {
+        gameSettings.musicTrack = event.target.value;
+        saveGameSettings();
+        if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
+    });
+    const sfxVolume = document.getElementById('sfx-volume');
+    if (sfxVolume) sfxVolume.addEventListener('input', event => {
+        gameSettings.sfxVolume = Number(event.target.value) / 100;
+        const label = document.getElementById('sfx-volume-value');
+        if (label) label.textContent = `${event.target.value}%`;
+        saveGameSettings();
+    });
+    const vibrationToggle = document.getElementById('vibration-toggle');
+    if (vibrationToggle) vibrationToggle.addEventListener('change', event => {
+        gameSettings.vibration = event.target.checked;
+        saveGameSettings();
+    });
+    const reducedMotionToggle = document.getElementById('reduced-motion-toggle');
+    if (reducedMotionToggle) reducedMotionToggle.addEventListener('change', event => {
+        gameSettings.reducedMotion = event.target.checked;
+        saveGameSettings();
+    });
+    const settingsReset = document.getElementById('btn-settings-reset');
+    if (settingsReset) settingsReset.addEventListener('click', () => {
+        if (confirm('Точно сбросить весь прогресс игры?')) resetProgress();
     });
 
     // Карта локаций
