@@ -82,6 +82,11 @@ function loadGameSettings() {
         const saved = JSON.parse(localStorage.getItem('bq_settings') || '{}');
         gameSettings = Object.assign(gameSettings, saved);
     } catch (e) {}
+    const allowedTracks = ['Ba1.mp3', 'Ba2.mp3', 'Ba3.mp3'];
+    if (!allowedTracks.includes(gameSettings.musicTrack)) {
+        gameSettings.musicTrack = 'Ba1.mp3';
+        localStorage.setItem('bq_settings', JSON.stringify(gameSettings));
+    }
     document.body.classList.toggle('reduced-motion', Boolean(gameSettings.reducedMotion));
 }
 function saveGameSettings() {
