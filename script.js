@@ -182,6 +182,12 @@ function startBackgroundMusic(track = MUSIC_FILES.background, volume = gameSetti
     backgroundMusic.volume = Math.max(0, Math.min(1, volume));
     backgroundMusic.play().catch(() => {});
 }
+function stopRhythmMusic() {
+    if (!backgroundMusic || !backgroundMusic.src.includes('/Rhytm.mp3')) return;
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    if (soundEnabled) startBackgroundMusic(gameSettings.musicTrack, gameSettings.musicVolume);
+}
 
 function updateBackgroundMusic() {
     if (!backgroundMusic) return;
@@ -315,6 +321,7 @@ function handleRhythmTap(laneIndex) {
 }
 
 function finishRhythmGame() {
+    stopRhythmMusic();
     rhythmActive = false;
     if (rhythmFrameId) cancelAnimationFrame(rhythmFrameId);
     rhythmLoop = null;
@@ -383,6 +390,7 @@ function triggerVibrate(ms = 50) {
 }
 
 function showScreen(screenId) {
+    if (screenId !== 'screen-rhythm') stopRhythmMusic();
     if (screenId !== 'screen-rhythm') {
         rhythmActive = false;
         if (rhythmFrameId) cancelAnimationFrame(rhythmFrameId);
