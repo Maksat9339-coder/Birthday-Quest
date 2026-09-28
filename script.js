@@ -4,10 +4,10 @@
 
 const CONFIG = {
     sisterName: "Аделина",         // Имя сестры
-    level2Code: "6857",          // Код 1 (из комнаты 1 - Зал / Зеркало)
-    level3Code: "7393",          // Код 2 (из комнаты 2 - Кухня / Предмет)
-    level4Code: "5518",          // Резервный код
-    finalCode: "5518"                    // Финальный код капсулы
+    level2Code: "5518",          // Код 1 (из комнаты 1 - Зал / Зеркало)
+    level3Code: "6857",          // Код 2 (из комнаты 2 - Кухня / Предмет)
+    level4Code: "7393",          // Резервный код
+    finalCode: "7393"                    // Финальный код капсулы
 };
 
 // Google Sheets tracking via the user's published Apps Script Web App.
